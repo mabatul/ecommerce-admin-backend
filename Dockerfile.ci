@@ -1,0 +1,30 @@
+# "Build" image for CI/CD (Jenkins) and real deployments — unlike
+# Dockerfile (which runs `next dev` over bind-mounted code, for local
+# development), this image COPIES the code and runs the production build.
+# Doesn't depend on any bind-mount, so it works the same whether it's run
+# by the developer's Docker or a Jenkins running inside another container
+# (Docker-outside-of-Docker), where relative host paths aren't visible to
+# the daemon.
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/package.json /app/package-lock.json* ./
+RUN npm ci --omit=dev
+COPY --from=build /app/.next ./.next
+COPY --from=build /app/next.config.js ./next.config.js
+# lib/ and scripts/ (TS source, not the build) are copied separately:
+# `npm run seed` runs scripts/seed.ts with tsx at runtime, not as part of
+# the Next.js build.
+COPY --from=build /app/lib ./lib
+COPY --from=build /app/scripts ./scripts
+COPY --from=build /app/tsconfig.json ./tsconfig.json
+
+EXPOSE 4000
+CMD ["npm", "run", "start"]
