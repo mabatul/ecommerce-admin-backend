@@ -1,0 +1,36 @@
+# Starts this backend on its own — does NOT depend on ecommerce-admin-infra
+# or ecommerce-admin-frontend being present or built from here.
+#
+# Reaches LocalStack (or DynamoDB Local, or whatever's behind
+# AWS_ENDPOINT_URL) via the HOST, not via a shared Docker network:
+# `host.docker.internal` is Docker Desktop's built-in DNS name for "the
+# machine this container runs on" (LocalStack publishes 4566 to the host,
+# see ecommerce-admin-infra). On native Linux Docker this name doesn't
+# resolve by default, hence the extra_hosts entry below — harmless on
+# Docker Desktop (Windows/Mac), where it's not needed but doesn't hurt.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-admin-backend
+    environment:
+      - ENVIRONMENT=local
+      - PROJECT_NAME=${PROJECT_NAME:-ecommerce-admin}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL:-http://host.docker.internal:4566}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+      - BACKEND_PORT=${BACKEND_PORT:-4000}
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    volumes:
+      - .:/app
+      - backend-node-modules:/app/node_modules
+      - backend-next-cache:/app/.next
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  backend-node-modules:
+  backend-next-cache:

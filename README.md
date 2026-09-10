@@ -10,15 +10,21 @@ Part of a 3-repo project — see
 architecture, the infrastructure (CloudFormation/LocalStack), and how to
 bring everything up together locally.
 
-## Running inside the full local environment (recommended)
+## Running with Docker (recommended)
 
-This repo doesn't stand on its own — it needs the infrastructure
-(LocalStack) and, to see it working end to end, the frontend. From
-`ecommerce-admin-infra` (cloned as a sibling folder of this repo):
+This repo has its own `docker-compose.yml` and starts **independently** —
+it doesn't build or need `ecommerce-admin-infra`'s compose file. It just
+needs LocalStack (or whatever `AWS_ENDPOINT_URL` points to) already
+reachable. Bring up the infrastructure first (from `ecommerce-admin-infra`:
+`docker compose up`), then, from here:
 
 ```bash
 docker compose up
 ```
+
+Reaches LocalStack via `host.docker.internal:4566` by default (see
+`docker-compose.yml` and `.env.example`) — no shared Docker network needed,
+since LocalStack already publishes 4566 to the host.
 
 ## Running standalone (outside Docker)
 
@@ -87,6 +93,7 @@ lib/aws/             DynamoDB client + config resolution
 lib/repositories/    One repository per table
 lib/http/            CORS/JSON helper shared by the routes
 scripts/seed.ts      Reproducible sample data
+docker-compose.yml   Runs this service on its own (see "Running with Docker" above)
 ```
 
 ## Deployment

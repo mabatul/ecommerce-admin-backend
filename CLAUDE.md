@@ -8,19 +8,30 @@ Context for Claude Code (or any AI assistant) working in this repo.
 up the ecommerce-admin project:
 
 - **ecommerce-admin-infra** — infrastructure only (CloudFormation,
-  LocalStack, local dev docker-compose, deployment scripts, local Jenkins).
-  Lives in a sibling folder, `../ecommerce-admin-infra`.
-- **ecommerce-admin-backend** (this repo) — the Next.js API.
+  LocalStack, deployment scripts, local Jenkins). Its `docker-compose.yml`
+  brings up LocalStack only, nothing else. Lives in a sibling folder,
+  `../ecommerce-admin-infra`.
+- **ecommerce-admin-backend** (this repo) — the Next.js API. Has its own
+  `docker-compose.yml` and starts independently.
 - **ecommerce-admin-frontend** — the Next.js dashboard, consumes this
-  backend's API over HTTP.
+  backend's API over HTTP. Also starts independently, with its own
+  `docker-compose.yml`.
 
-This repo doesn't run on its own — it needs the infrastructure
-(LocalStack locally, or DynamoDB Local on Railway, or real AWS) reachable
-via `AWS_ENDPOINT_URL`. See `ecommerce-admin-infra/README.md` for the full
-picture and how to bring everything up together.
+This repo needs infra's LocalStack (or DynamoDB Local on Railway, or real
+AWS) reachable via `AWS_ENDPOINT_URL` — but it does **not** depend on
+`ecommerce-admin-infra`'s `docker-compose.yml` to build or start it.
+`docker-compose.yml` (this repo) reaches LocalStack over the host via
+`host.docker.internal:4566`, since LocalStack already publishes that port.
+Bring infra up first (separately), then this repo, then frontend — see
+`ecommerce-admin-infra/README.md` for the full sequence.
 
 ## Key design decisions (don't undo these without a reason)
 
+- **This repo starts independently, on purpose.** `docker-compose.yml`
+  here only defines the `backend` service — it never references or builds
+  infra/frontend. Don't merge it back into a shared compose file at the
+  infra repo; that coupling is exactly what the 3-repo split was meant to
+  remove.
 - **`lib/aws/config.ts` is the only place that knows about environments.**
   Region, endpoint, credentials and table names are resolved purely from
   env vars (`AWS_ENDPOINT_URL`, `ENVIRONMENT`, `PROJECT_NAME`,
@@ -44,9 +55,7 @@ picture and how to bring everything up together.
 - Documentation (README, code comments): **English**, even though
   conversations about this project may happen in Spanish.
 - Commit messages: plain-language summaries of what changed (not
-  Conventional Commits prefixes like `feat:`/`chore:`), and they carry a
-  `Co-Authored-By: Claude ...` trailer when Claude Code made the change —
-  that trailer stays; it's a transparency requirement, not a style choice.
+  Conventional Commits prefixes like `feat:`/`chore:`).
 - Don't fabricate commit timestamps/history to make automated work look
   like it happened incrementally over time it didn't.
 
