@@ -68,11 +68,16 @@ to configure them separately.
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/health` | Backend status + what it's connected to |
+| GET | `/api/stats` | Dashboard counts + recently added products/users, one request |
 | GET, POST | `/api/products` | List / create products |
-| GET, DELETE | `/api/products/:productId` | Get / delete a product |
+| GET, PUT, DELETE | `/api/products/:productId` | Get / edit (also used for stock updates) / delete a product |
 | GET, POST | `/api/categories` | List / create categories |
+| GET, PUT, DELETE | `/api/categories/:categoryId` | Get / edit / delete a category |
 | GET, POST | `/api/users` | List / create users |
+| GET, PUT, DELETE | `/api/users/:userId` | Get / edit / delete a user |
+| GET | `/api/carts` | All carts (admin overview) |
 | GET, PUT, DELETE | `/api/carts/:userId` | A user's cart |
+| GET | `/api/wishlists` | All wishlists (admin overview) |
 | GET, PUT, DELETE | `/api/wishlists/:userId` | A user's wishlist |
 
 ## npm scripts

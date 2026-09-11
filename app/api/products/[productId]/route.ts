@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { json } from "@/lib/http/cors";
 import { productsRepository } from "@/lib/repositories/products";
 
@@ -13,8 +14,39 @@ export async function GET(_request: Request, { params }: Params) {
   return json(product);
 }
 
+// Full edit and "update stock" both go through this — a stock-only update
+// is just a PUT with the other fields unchanged (the frontend sends the
+// full product either way, since that's what it already has loaded).
+export async function PUT(request: NextRequest, { params }: Params) {
+  const { productId } = await params;
+  const body = await request.json();
+
+  if (!body.name || typeof body.price !== "number" || !body.categoryId) {
+    return json({ error: "name, price and categoryId are required" }, 400);
+  }
+
+  const existing = await productsRepository.get(productId);
+  if (!existing) return json({ error: "not found" }, 404);
+
+  const product = await productsRepository.put({
+    productId,
+    name: body.name,
+    description: body.description,
+    price: body.price,
+    categoryId: body.categoryId,
+    stock: typeof body.stock === "number" ? body.stock : existing.stock,
+    createdAt: existing.createdAt,
+  });
+
+  return json(product);
+}
+
 export async function DELETE(_request: Request, { params }: Params) {
   const { productId } = await params;
   await productsRepository.remove(productId);
+  return json(null, 204);
+}
+
+export async function OPTIONS() {
   return json(null, 204);
 }
