@@ -1,0 +1,46 @@
+name: CI
+
+# Runs on every push/PR to any branch (build + lint), and additionally
+# deploys to Railway when the push lands on `main`. This replaces the
+# cloud Jenkins for this repo — see ecommerce-admin-infra/jenkins-cloud/
+# README.md for why: Jenkins on Railway's free tier (512MB) couldn't fit
+# Jenkins itself plus a Next.js build without OOM-killing the whole
+# container, verified live. GitHub Actions is free and unlimited for
+# public repos, with far more headroom (2 vCPU / 7GB RAM per runner), so
+# the actual build work moved here. The Jenkinsfile in this repo is kept
+# for reference / in case this ever points at a Jenkins with real
+# resources again, but it isn't what runs in practice anymore.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Railway (dev)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          npm i -g @railway/cli
+          railway up --service ecommerce-admin-backend --detach

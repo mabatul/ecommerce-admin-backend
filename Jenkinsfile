@@ -18,6 +18,14 @@ pipeline {
 
   environment {
     RAILWAY_SERVICE = 'ecommerce-admin-backend'
+    // The cloud Jenkins runs on Railway's free tier (512MB total) — an
+    // uncapped `next build` can spike past what's left after Jenkins'
+    // own footprint and take the whole container down with it (OOM-killed,
+    // no error of its own, just a dead pipeline — verified live). Capping
+    // Node's heap trades that for an ordinary failed build if it's ever
+    // not enough, which is a much better failure mode. Harmless locally
+    // too, where there's plenty of headroom.
+    NODE_OPTIONS = '--max-old-space-size=200'
   }
 
   stages {

@@ -98,21 +98,28 @@ docker-compose.yml   Runs this service on its own (see "Running with Docker" abo
 
 ## Deployment
 
-[`Jenkinsfile`](Jenkinsfile): lint, build, Docker image build (uses
-[`Dockerfile.ci`](Dockerfile.ci) — see [`railway.json`](railway.json)) and
-deploy to Railway. Runs as an independent Jenkins job (see
-`ecommerce-admin-infra/jenkins/README.md`) — doesn't depend on
-frontend/infra deploying in the same pipeline or at the same time.
+**Real CI/CD**: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) —
+lint + build on every push/PR to any branch; on `main`, also deploys to
+Railway (Railway builds the actual image itself from
+[`Dockerfile.ci`](Dockerfile.ci), per [`railway.json`](railway.json) — the
+workflow just calls `railway up`). Free and unlimited for this public
+repo, doesn't depend on frontend/infra deploying at the same time.
 
-For the deploy stage to work, you need:
+For the deploy job to work, you need:
 
 1. A Railway project with a service for this backend (image/build via
    Dockerfile, see `railway.json`) and its environment variables configured
    (see the table above, "Railway (dev)" column).
 2. A Railway **Project Token** (Railway dashboard → project →
    Settings → Tokens).
-3. In Jenkins: a **Secret text** credential, id `railway-token-backend`,
-   value = that token.
+3. In this repo's GitHub Settings → Secrets and variables → Actions: a
+   **repository secret** named `RAILWAY_TOKEN`, value = that token.
 
-If the Railway service name isn't `ecommerce-admin-backend`, adjust
-`RAILWAY_SERVICE` in the `Jenkinsfile`.
+If the Railway service name isn't `ecommerce-admin-backend`, adjust the
+`--service` flag in the workflow's deploy step.
+
+[`Jenkinsfile`](Jenkinsfile) is kept for reference — it's what this
+repo's job would run on a Jenkins with real resources (see
+`ecommerce-admin-infra/jenkins/README.md` for the local one), but it isn't
+what runs the actual CI/CD today; see
+`ecommerce-admin-infra/jenkins-cloud/README.md` for why.
