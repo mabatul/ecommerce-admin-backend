@@ -93,12 +93,13 @@ to configure them separately.
 ## Structure
 
 ```
-app/api/            Route handlers (one per resource)
-lib/aws/             DynamoDB client + config resolution
-lib/repositories/    One repository per table
-lib/http/            CORS/JSON helper shared by the routes
-scripts/seed.ts      Reproducible sample data
-docker-compose.yml   Runs this service on its own (see "Running with Docker" above)
+app/api/               Route handlers (one per resource)
+lib/aws/                DynamoDB client + config resolution
+lib/repositories/       One repository per table
+lib/http/               CORS/JSON helper shared by the routes
+scripts/seed.ts         Reproducible sample data
+scripts/test-cors.sh    Hits every verb on every endpoint, checks CORS headers
+docker-compose.yml      Runs this service on its own (see "Running with Docker" above)
 ```
 
 ## Deployment
