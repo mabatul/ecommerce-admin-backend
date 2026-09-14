@@ -5,11 +5,7 @@ import { usersRepository } from "@/lib/repositories/users";
 import { cartsRepository } from "@/lib/repositories/carts";
 import { wishlistsRepository } from "@/lib/repositories/wishlists";
 
-// One request for everything the dashboard needs, instead of the frontend
-// fetching all 5 lists and counting client-side — same data, one round
-// trip. Counts a cart/wishlist as "active" when it has at least one item,
-// since an empty row still exists in the table for any user who's ever
-// touched their cart/wishlist page.
+// Everything the dashboard needs, one request.
 export const GET = withErrorHandling(async () => {
   const [products, categories, users, carts, wishlists] = await Promise.all([
     productsRepository.list(),

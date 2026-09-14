@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { json, withErrorHandling } from "@/lib/http/cors";
 import { productsRepository } from "@/lib/repositories/products";
 
-// Next.js 15+: params arrives as a Promise in dynamic route handlers.
 interface Params {
   params: Promise<{ productId: string }>;
 }
@@ -14,9 +13,7 @@ export const GET = withErrorHandling(async (_request: Request, { params }: Param
   return json(product);
 });
 
-// Full edit and "update stock" both go through this — a stock-only update
-// is just a PUT with the other fields unchanged (the frontend sends the
-// full product either way, since that's what it already has loaded).
+// Also covers "update stock" — same PUT, just a changed stock value.
 export const PUT = withErrorHandling(async (request: NextRequest, { params }: Params) => {
   const { productId } = await params;
   const body = await request.json();

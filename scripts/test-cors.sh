@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
-# Hits every verb on every endpoint and checks both the status code AND
-# that an Access-Control-Allow-Origin header actually comes back — plain
-# curl testing during development missed two real bugs (a 204 response
-# with a body, and a route missing its OPTIONS handler entirely) because
-# neither shows up unless you specifically check for the CORS header, not
-# just the status code. A browser reports both as "blocked by CORS
-# policy" with no mention of the real cause, so this checks the thing
-# that actually matters.
-#
-# Usage: BASE=http://localhost:4000 ./scripts/test-cors.sh
-# Needs a running backend with the seed data loaded (npm run seed).
+# Hits every verb on every endpoint and checks status code + CORS header.
+# Usage: BASE=http://localhost:4000 ./scripts/test-cors.sh (needs seed data)
 BASE="${BASE:-http://localhost:4000}"
 PASS=0
 FAIL=0

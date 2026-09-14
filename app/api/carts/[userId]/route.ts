@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { json, withErrorHandling } from "@/lib/http/cors";
 import { cartsRepository } from "@/lib/repositories/carts";
 
-// Next.js 15+: params arrives as a Promise in dynamic route handlers.
 interface Params {
   params: Promise<{ userId: string }>;
 }
@@ -32,11 +31,6 @@ export const DELETE = withErrorHandling(async (_request: Request, { params }: Pa
   return json(null, 204);
 });
 
-// Was missing entirely before — without it, Next.js answers a CORS
-// preflight OPTIONS itself, with no Access-Control-Allow-Origin header,
-// so a cross-origin PUT/DELETE here (e.g. "Clear cart" in the frontend)
-// would fail as a CORS error before ever reaching PUT/DELETE above.
-// Verified live alongside the same bug in wishlists/[userId].
 export async function OPTIONS() {
   return json(null, 204);
 }

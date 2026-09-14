@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { json, withErrorHandling } from "@/lib/http/cors";
 import { wishlistsRepository } from "@/lib/repositories/wishlists";
 
-// Next.js 15+: params arrives as a Promise in dynamic route handlers.
 interface Params {
   params: Promise<{ userId: string }>;
 }
@@ -32,8 +31,6 @@ export const DELETE = withErrorHandling(async (_request: Request, { params }: Pa
   return json(null, 204);
 });
 
-// Was missing entirely before — see the identical comment in
-// app/api/carts/[userId]/route.ts.
 export async function OPTIONS() {
   return json(null, 204);
 }

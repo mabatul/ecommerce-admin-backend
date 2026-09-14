@@ -1,31 +1,12 @@
-// Pipeline for THIS repo only. Triggers and deploys independently of
-// infra/frontend — doesn't depend on another job having run first.
-//
-// Runs as a Multibranch Pipeline on the cloud Jenkins (see
-// jenkins-cloud/init.groovy.d/jobs.groovy in the infra repo) — every
-// branch builds, lints and runs the smoke test, but the actual deploy
-// below only fires on 'main' (`when { branch 'main' }`). That's what
-// makes BRANCH_NAME available at all; a plain non-multibranch job
-// wouldn't have it.
-//
-// Deploying to Railway requires a Jenkins credential of type "Secret text"
-// with id 'railway-token-backend' (a Railway Project Token, generated from
-// the project dashboard -> Settings -> Tokens) and, optionally, the
-// RAILWAY_SERVICE variable if the service name doesn't match Railway's
-// default. See README.md.
+// Independent pipeline for this repo only — doesn't depend on infra/frontend.
+// Not the active CI (see .github/workflows/ci.yml); kept for a Jenkins with
+// real resources. Needs a 'railway-token-backend' Secret text credential.
 pipeline {
   agent any
 
   environment {
     RAILWAY_SERVICE = 'ecommerce-admin-backend'
-    // The cloud Jenkins runs on Railway's free tier (512MB total) — an
-    // uncapped `next build` can spike past what's left after Jenkins'
-    // own footprint and take the whole container down with it (OOM-killed,
-    // no error of its own, just a dead pipeline — verified live). Capping
-    // Node's heap trades that for an ordinary failed build if it's ever
-    // not enough, which is a much better failure mode. Harmless locally
-    // too, where there's plenty of headroom.
-    NODE_OPTIONS = '--max-old-space-size=200'
+    NODE_OPTIONS = '--max-old-space-size=200' // avoid OOM on constrained Jenkins hosts
   }
 
   stages {
@@ -45,25 +26,19 @@ pipeline {
       steps { sh 'npm run build' }
     }
 
-    // Best-effort smoke test, not required for the deploy below — Railway
-    // builds the image itself from Dockerfile.ci (per railway.json) when
-    // 'railway up' runs. Skips itself instead of failing on a Jenkins agent
-    // with no Docker daemon available (e.g. this pipeline running on the
-    // Railway-hosted Jenkins, not the local one).
+    // Best effort — Railway builds its own image from Dockerfile.ci.
     stage('Build Docker image') {
       steps {
         sh '''
           if command -v docker >/dev/null 2>&1; then
             docker build -f Dockerfile.ci -t ecommerce-admin-backend:${BUILD_NUMBER} .
           else
-            echo "No Docker daemon available here — skipping (Railway builds the image itself on deploy)."
+            echo "No Docker daemon available here — skipping."
           fi
         '''
       }
     }
 
-    // Only 'main' actually deploys — every other branch stops here having
-    // already proven it builds, lints and passes the smoke test above.
     stage('Deploy to Railway (dev)') {
       when { branch 'main' }
       steps {

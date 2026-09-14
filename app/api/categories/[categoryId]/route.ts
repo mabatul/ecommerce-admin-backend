@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { json, withErrorHandling } from "@/lib/http/cors";
 import { categoriesRepository } from "@/lib/repositories/categories";
 
-// Next.js 15+: params arrives as a Promise in dynamic route handlers.
 interface Params {
   params: Promise<{ categoryId: string }>;
 }
