@@ -1,14 +1,14 @@
 import { NextRequest } from "next/server";
 import { randomUUID } from "crypto";
-import { json } from "@/lib/http/cors";
+import { json, withErrorHandling } from "@/lib/http/cors";
 import { usersRepository } from "@/lib/repositories/users";
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   const users = await usersRepository.list();
   return json(users);
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
 
   if (!body.name || !body.email) {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   });
 
   return json(user, 201);
-}
+});
 
 export async function OPTIONS() {
   return json(null, 204);

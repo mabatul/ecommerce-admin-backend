@@ -31,3 +31,26 @@ export function json(data: unknown, init?: number | ResponseInit): NextResponse 
   const response = NextResponse.json(data, resolvedInit);
   return withCors(response);
 }
+
+/**
+ * Wraps a route handler so that ANY thrown error still comes back through
+ * json()/withCors() instead of Next.js's own bare error response (no CORS
+ * headers at all). Without this, an uncaught exception anywhere in a
+ * handler — a bad DynamoDB write, a malformed request body, anything —
+ * shows up in the browser as a CORS failure ("No Access-Control-Allow-
+ * Origin header") instead of the real error, which is exactly what
+ * happened twice already (the 204-with-a-body bug, then the
+ * empty-string-id bug) before every handler was wrapped with this.
+ */
+export function withErrorHandling<Args extends unknown[]>(
+  handler: (...args: Args) => Promise<NextResponse>
+): (...args: Args) => Promise<NextResponse> {
+  return async (...args: Args) => {
+    try {
+      return await handler(...args);
+    } catch (error) {
+      console.error("[api] unhandled error:", error);
+      return json({ error: "Internal server error" }, 500);
+    }
+  };
+}

@@ -1,4 +1,4 @@
-import { json } from "@/lib/http/cors";
+import { json, withErrorHandling } from "@/lib/http/cors";
 import { productsRepository } from "@/lib/repositories/products";
 import { categoriesRepository } from "@/lib/repositories/categories";
 import { usersRepository } from "@/lib/repositories/users";
@@ -10,7 +10,7 @@ import { wishlistsRepository } from "@/lib/repositories/wishlists";
 // trip. Counts a cart/wishlist as "active" when it has at least one item,
 // since an empty row still exists in the table for any user who's ever
 // touched their cart/wishlist page.
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   const [products, categories, users, carts, wishlists] = await Promise.all([
     productsRepository.list(),
     categoriesRepository.list(),
@@ -35,4 +35,4 @@ export async function GET() {
     recentProducts,
     recentUsers,
   });
-}
+});

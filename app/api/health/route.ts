@@ -1,7 +1,7 @@
-import { json } from "@/lib/http/cors";
+import { json, withErrorHandling } from "@/lib/http/cors";
 import { environment, isLocalStack, region } from "@/lib/aws/config";
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   return json({
     status: "ok",
     environment,
@@ -9,4 +9,4 @@ export async function GET() {
     backedBy: isLocalStack ? "localstack" : "aws",
     timestamp: new Date().toISOString(),
   });
-}
+});

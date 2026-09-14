@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { json } from "@/lib/http/cors";
+import { json, withErrorHandling } from "@/lib/http/cors";
 import { categoriesRepository } from "@/lib/repositories/categories";
 
 // Next.js 15+: params arrives as a Promise in dynamic route handlers.
@@ -7,14 +7,14 @@ interface Params {
   params: Promise<{ categoryId: string }>;
 }
 
-export async function GET(_request: Request, { params }: Params) {
+export const GET = withErrorHandling(async (_request: Request, { params }: Params) => {
   const { categoryId } = await params;
   const category = await categoriesRepository.get(categoryId);
   if (!category) return json({ error: "not found" }, 404);
   return json(category);
-}
+});
 
-export async function PUT(request: NextRequest, { params }: Params) {
+export const PUT = withErrorHandling(async (request: NextRequest, { params }: Params) => {
   const { categoryId } = await params;
   const body = await request.json();
 
@@ -32,13 +32,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
   });
 
   return json(category);
-}
+});
 
-export async function DELETE(_request: Request, { params }: Params) {
+export const DELETE = withErrorHandling(async (_request: Request, { params }: Params) => {
   const { categoryId } = await params;
   await categoriesRepository.remove(categoryId);
   return json(null, 204);
-}
+});
 
 export async function OPTIONS() {
   return json(null, 204);

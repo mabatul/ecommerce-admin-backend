@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { json } from "@/lib/http/cors";
+import { json, withErrorHandling } from "@/lib/http/cors";
 import { productsRepository } from "@/lib/repositories/products";
 
 // Next.js 15+: params arrives as a Promise in dynamic route handlers.
@@ -7,17 +7,17 @@ interface Params {
   params: Promise<{ productId: string }>;
 }
 
-export async function GET(_request: Request, { params }: Params) {
+export const GET = withErrorHandling(async (_request: Request, { params }: Params) => {
   const { productId } = await params;
   const product = await productsRepository.get(productId);
   if (!product) return json({ error: "not found" }, 404);
   return json(product);
-}
+});
 
 // Full edit and "update stock" both go through this — a stock-only update
 // is just a PUT with the other fields unchanged (the frontend sends the
 // full product either way, since that's what it already has loaded).
-export async function PUT(request: NextRequest, { params }: Params) {
+export const PUT = withErrorHandling(async (request: NextRequest, { params }: Params) => {
   const { productId } = await params;
   const body = await request.json();
 
@@ -39,13 +39,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
   });
 
   return json(product);
-}
+});
 
-export async function DELETE(_request: Request, { params }: Params) {
+export const DELETE = withErrorHandling(async (_request: Request, { params }: Params) => {
   const { productId } = await params;
   await productsRepository.remove(productId);
   return json(null, 204);
-}
+});
 
 export async function OPTIONS() {
   return json(null, 204);
