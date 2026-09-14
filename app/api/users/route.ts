@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
   }
 
   const user = await usersRepository.put({
-    userId: body.userId ?? randomUUID(),
+    // `||`, not `??` — see app/api/products/route.ts for why (an empty
+    // string, which a "new" form sends, must also fall through to a
+    // generated id; DynamoDB rejects "" as a key value).
+    userId: body.userId || randomUUID(),
     name: body.name,
     email: body.email,
     role: body.role === "admin" ? "admin" : "customer",

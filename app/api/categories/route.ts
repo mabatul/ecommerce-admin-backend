@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
   }
 
   const category = await categoriesRepository.put({
-    categoryId: body.categoryId ?? randomUUID(),
+    // `||`, not `??` — see app/api/products/route.ts for why (an empty
+    // string, which a "new" form sends, must also fall through to a
+    // generated id; DynamoDB rejects "" as a key value).
+    categoryId: body.categoryId || randomUUID(),
     name: body.name,
     description: body.description,
   });
