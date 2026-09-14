@@ -1,10 +1,7 @@
-# "Build" image for CI/CD (Jenkins) and real deployments — unlike
-# Dockerfile (which runs `next dev` over bind-mounted code, for local
-# development), this image COPIES the code and runs the production build.
-# Doesn't depend on any bind-mount, so it works the same whether it's run
-# by the developer's Docker or a Jenkins running inside another container
-# (Docker-outside-of-Docker), where relative host paths aren't visible to
-# the daemon.
+# "Build" image for CI/CD and real deployments — unlike Dockerfile (which
+# runs `next dev` over bind-mounted code, for local development), this
+# image COPIES the code and runs the production build. Doesn't depend on
+# any bind-mount, so it works the same on a developer's machine or on Railway.
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json* ./

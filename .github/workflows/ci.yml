@@ -1,8 +1,7 @@
 name: CI
 
-# Builds/lints every push and PR; deploys to Railway on main. Replaces the
-# cloud Jenkins (see ecommerce-admin-infra/jenkins-cloud/README.md) — free
-# and unlimited for public repos.
+# Builds/lints every push and PR; deploys to Railway on main. Free and
+# unlimited for public repos.
 on:
   push:
     branches: ['**']

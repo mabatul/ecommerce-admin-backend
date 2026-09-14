@@ -123,9 +123,3 @@ For the deploy job to work, you need:
 
 If the Railway service name isn't `ecommerce-admin-backend`, adjust the
 `--service` flag in the workflow's deploy step.
-
-[`Jenkinsfile`](Jenkinsfile) is kept for reference — it's what this
-repo's job would run on a Jenkins with real resources (see
-`ecommerce-admin-infra/jenkins/README.md` for the local one), but it isn't
-what runs the actual CI/CD today; see
-`ecommerce-admin-infra/jenkins-cloud/README.md` for why.

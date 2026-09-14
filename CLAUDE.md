@@ -8,8 +8,8 @@ Context for Claude Code (or any AI assistant) working in this repo.
 up the ecommerce-admin project:
 
 - **ecommerce-admin-infra** — infrastructure only (CloudFormation,
-  LocalStack, deployment scripts, local Jenkins). Its `docker-compose.yml`
-  brings up LocalStack only, nothing else. Lives in a sibling folder,
+  LocalStack, deployment scripts). Its `docker-compose.yml` brings up
+  LocalStack only, nothing else. Lives in a sibling folder,
   `../ecommerce-admin-infra`.
 - **ecommerce-admin-backend** (this repo) — the Next.js API. Has its own
   `docker-compose.yml` and starts independently.
@@ -46,9 +46,9 @@ Bring infra up first (separately), then this repo, then frontend — see
   baked in via `COPY` (used by CI and by Railway, see `railway.json`) —
   it also bakes in `lib/`, `scripts/`, and `tsconfig.json` so `npm run seed`
   works at runtime via `tsx`, not just the compiled `.next` output.
-- **This repo deploys independently.** Its `Jenkinsfile` builds, lints, and
-  deploys to Railway on its own — it doesn't wait for or depend on
-  infra/frontend's pipelines.
+- **This repo deploys independently.** Its `.github/workflows/ci.yml`
+  builds, lints, and deploys to Railway on its own — it doesn't wait for or
+  depend on infra/frontend's pipelines.
 
 ## Conventions across all three repos
 
