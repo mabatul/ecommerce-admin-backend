@@ -1,15 +1,8 @@
 name: CI
 
-# Runs on every push/PR to any branch (build + lint), and additionally
-# deploys to Railway when the push lands on `main`. This replaces the
-# cloud Jenkins for this repo — see ecommerce-admin-infra/jenkins-cloud/
-# README.md for why: Jenkins on Railway's free tier (512MB) couldn't fit
-# Jenkins itself plus a Next.js build without OOM-killing the whole
-# container, verified live. GitHub Actions is free and unlimited for
-# public repos, with far more headroom (2 vCPU / 7GB RAM per runner), so
-# the actual build work moved here. The Jenkinsfile in this repo is kept
-# for reference / in case this ever points at a Jenkins with real
-# resources again, but it isn't what runs in practice anymore.
+# Builds/lints every push and PR; deploys to Railway on main. Replaces the
+# cloud Jenkins (see ecommerce-admin-infra/jenkins-cloud/README.md) — free
+# and unlimited for public repos.
 on:
   push:
     branches: ['**']

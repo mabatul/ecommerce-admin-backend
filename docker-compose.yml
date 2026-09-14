@@ -1,13 +1,5 @@
-# Starts this backend on its own — does NOT depend on ecommerce-admin-infra
-# or ecommerce-admin-frontend being present or built from here.
-#
-# Reaches LocalStack (or DynamoDB Local, or whatever's behind
-# AWS_ENDPOINT_URL) via the HOST, not via a shared Docker network:
-# `host.docker.internal` is Docker Desktop's built-in DNS name for "the
-# machine this container runs on" (LocalStack publishes 4566 to the host,
-# see ecommerce-admin-infra). On native Linux Docker this name doesn't
-# resolve by default, hence the extra_hosts entry below — harmless on
-# Docker Desktop (Windows/Mac), where it's not needed but doesn't hurt.
+# Starts this backend on its own; reaches LocalStack via the host
+# (host.docker.internal). extra_hosts is only needed on native Linux.
 services:
   backend:
     build:
