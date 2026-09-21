@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 # Hits every verb on every endpoint and checks status code + CORS header.
-# Usage: BASE=http://localhost:4000 ./scripts/test-cors.sh (needs seed data)
+# Usage: BASE=http://localhost:4000 [ADMIN_API_KEY=...] ./scripts/test-cors.sh (needs seed data)
+# Set ADMIN_API_KEY when the backend has one configured.
 BASE="${BASE:-http://localhost:4000}"
+CUSTOMER="guest-99999999-9999-4999-8999-999999999999"
 PASS=0
 FAIL=0
 
-check() {
-  local method="$1" path="$2" data="$3" expect="$4"
+# `check` sends admin credentials (if any) and a customer id; `check_anon` sends neither.
+request() {
+  local mode="$1" method="$2" path="$3" data="$4" expect="$5"
   local args=(-s -o /dev/null -D - -X "$method" "$BASE$path")
+  if [ "$mode" = "auth" ]; then
+    args+=(-H "X-Customer-Id: $CUSTOMER")
+    [ -n "$ADMIN_API_KEY" ] && args+=(-H "Authorization: Bearer $ADMIN_API_KEY")
+  fi
   if [ -n "$data" ]; then
     args+=(-H "Content-Type: application/json" -d "$data")
   fi
@@ -26,6 +33,9 @@ check() {
     FAIL=$((FAIL+1))
   fi
 }
+
+check() { request auth "$@"; }
+check_anon() { request anon "$@"; }
 
 # --- products ---
 check OPTIONS /api/products "" 204
@@ -81,6 +91,57 @@ check GET /api/health "" 200
 check POST /api/products '{"name":""}' 400
 check POST /api/categories '{}' 400
 check POST /api/users '{"name":"x"}' 400
+check POST /api/products '{oops' 400
+check POST /api/products '{"name":"x","price":1,"categoryId":"does-not-exist"}' 400
+check DELETE /api/categories/cat-electronics "" 409
+
+# --- storefront: catalog (public) ---
+check OPTIONS /api/store/products "" 204
+check GET /api/store/products "" 200
+check GET "/api/store/products?limit=2&search=a&inStock=true" "" 200
+check GET "/api/store/products?limit=999" "" 400
+check GET "/api/store/products?cursor=garbage" "" 400
+check OPTIONS /api/store/products/prod-001 "" 204
+check GET /api/store/products/prod-001 "" 200
+check GET /api/store/products/does-not-exist "" 404
+check OPTIONS /api/store/categories "" 204
+check GET /api/store/categories "" 200
+
+# --- storefront: cart ---
+check OPTIONS /api/store/cart "" 204
+check GET /api/store/cart "" 200
+check POST /api/store/cart/items '{"productId":"prod-001","quantity":1}' 201
+check POST /api/store/cart/items '{"productId":"prod-001","quantity":1}' 201
+check OPTIONS /api/store/cart/items "" 204
+check OPTIONS /api/store/cart/items/prod-001 "" 204
+check PATCH /api/store/cart/items/prod-001 '{"quantity":2}' 200
+check PATCH /api/store/cart/items/prod-001 '{"quantity":100}' 400
+check PATCH /api/store/cart/items/prod-999 '{"quantity":1}' 404
+check POST /api/store/cart/items '{"productId":"prod-007","quantity":1}' 409
+check POST /api/store/cart/items '{"productId":"does-not-exist","quantity":1}' 404
+check POST /api/store/cart/items '{"productId":"prod-001","quantity":0}' 400
+check DELETE /api/store/cart/items/prod-001 "" 200
+check DELETE /api/store/cart "" 200
+check_anon GET /api/store/cart "" 400
+
+# --- storefront: wishlist ---
+check OPTIONS /api/store/wishlist "" 204
+check GET /api/store/wishlist "" 200
+check OPTIONS /api/store/wishlist/items "" 204
+check POST /api/store/wishlist/items '{"productId":"prod-001"}' 201
+check POST /api/store/wishlist/items '{"productId":"prod-001"}' 201
+check POST /api/store/wishlist/items '{"productId":"does-not-exist"}' 404
+check OPTIONS /api/store/wishlist/items/prod-001 "" 204
+check DELETE /api/store/wishlist/items/prod-001 "" 200
+check DELETE /api/store/wishlist "" 200
+
+# --- admin routes reject requests without the admin key (only when one is configured) ---
+if [ -n "$ADMIN_API_KEY" ]; then
+  check_anon GET /api/products "" 401
+  check_anon DELETE /api/products/prod-001 "" 401
+  check_anon GET /api/stats "" 401
+  check_anon OPTIONS /api/products "" 204
+fi
 
 echo
 echo "PASS=$PASS FAIL=$FAIL"
