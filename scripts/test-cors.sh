@@ -85,7 +85,10 @@ check DELETE /api/wishlists/does-not-exist "" 204
 
 # --- stats / health ---
 check GET /api/stats "" 200
+check OPTIONS /api/stats "" 204
 check GET /api/health "" 200
+check OPTIONS /api/health "" 204
+check OPTIONS /api/route-that-does-not-exist "" 204
 
 # --- validation error paths still need CORS too ---
 check POST /api/products '{"name":""}' 400
