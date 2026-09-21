@@ -10,7 +10,8 @@
     "seed": "tsx scripts/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "init-tables": "tsx scripts/init-tables.ts"
+    "init-tables": "tsx scripts/init-tables.ts",
+    "seed:remote": "tsx scripts/seed-remote.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.633.0",

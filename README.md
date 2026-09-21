@@ -163,7 +163,20 @@ than it returns. Both are fine at this catalog size; see
 | `npm run lint` | Lint |
 | `npm test` | Unit tests (Vitest) |
 | `npm run seed` | Loads sample data (see [`scripts/seed.ts`](scripts/seed.ts)) |
+| `npm run seed:remote` | Loads the same sample data into a *running* backend through its admin API (`API_URL`, `ADMIN_API_KEY`); idempotent, needs no database access |
 | `npm run init-tables` | Creates the DynamoDB tables when `AWS_ENDPOINT_URL` is set (DynamoDB Local / LocalStack); idempotent, no-op against real AWS |
+
+## Loading sample data into a deployed backend
+
+The database behind a deployed backend (DynamoDB Local on Railway) isn't reachable from
+your machine, and it starts empty after a restart. `seed:remote` fills it through the API
+instead, so no database access or public address is needed:
+
+```bash
+API_URL=https://<your-backend> ADMIN_API_KEY=<key> npm run seed:remote
+```
+
+It creates each record, or replaces it if it already exists, so running it twice is safe.
 
 ## Testing
 
@@ -192,7 +205,9 @@ lib/http/               CORS/JSON helper, error mapping, admin key check, reques
 lib/aws/                DynamoDB client + config resolution
 lib/errors.ts           Typed errors that map to HTTP statuses
 lib/types.ts            Domain types
-scripts/seed.ts         Reproducible sample data (5 categories, 15 products)
+scripts/seed-data.ts    The sample catalog (5 categories, 15 products, 3 users, a cart, a wishlist)
+scripts/seed.ts         Writes it straight to DynamoDB (local dev)
+scripts/seed-remote.ts  Sends it through a deployed backend's admin API
 scripts/test-cors.sh    Contract test against a running backend
 docker-compose.yml      Runs this service on its own (see "Running with Docker" above)
 ```
