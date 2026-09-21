@@ -232,6 +232,11 @@ For the deploy job to work, you need:
 If the Railway service name isn't `ecommerce-admin-backend`, adjust the
 `--service` flag in the workflow's deploy step.
 
-**Rolling out the admin key**: the admin dashboard must be deployed first
-(it sends the key once you sign in), then set `ADMIN_API_KEY` on Railway,
-then deploy this backend — otherwise the live dashboard is locked out.
+**Rolling out the admin key**: the backend and the dashboard have to move
+together, and the order matters. The deployed backend from before this change
+does not allow the `Authorization` header in CORS, so a new dashboard talking
+to an old backend is blocked by the browser; and a new backend answers `401`
+to an old dashboard, which sends no key. So: set `ADMIN_API_KEY` on Railway
+first (harmless to the old code), deploy this backend, then deploy the
+dashboard straight after. Expect the dashboard to be unusable for the few
+minutes between the two builds.
