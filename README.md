@@ -163,6 +163,7 @@ than it returns. Both are fine at this catalog size; see
 | `npm run lint` | Lint |
 | `npm test` | Unit tests (Vitest) |
 | `npm run seed` | Loads sample data (see [`scripts/seed.ts`](scripts/seed.ts)) |
+| `npm run init-tables` | Creates the DynamoDB tables when `AWS_ENDPOINT_URL` is set (DynamoDB Local / LocalStack); idempotent, no-op against real AWS |
 
 ## Testing
 
@@ -217,6 +218,13 @@ jobs:
 
 Free and unlimited for this public repo, doesn't depend on the other repos
 deploying at the same time.
+
+On every Railway deploy, [`railway.json`](railway.json) runs
+`npm run init-tables` as the **pre-deploy command**. It runs inside Railway's
+private network and creates any missing table in DynamoDB Local, so the
+database never needs a public address just to be initialised (and a
+restarted, empty DynamoDB Local is repopulated with its tables on the next
+deploy). Against real AWS it does nothing; CloudFormation owns those tables.
 
 For the deploy job to work, you need:
 

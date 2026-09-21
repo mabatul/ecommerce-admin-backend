@@ -5,6 +5,9 @@
     "dockerfilePath": "Dockerfile.ci"
   },
   "deploy": {
+    "preDeployCommand": [
+      "npm run init-tables"
+    ],
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE"

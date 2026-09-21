@@ -9,7 +9,8 @@
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "init-tables": "tsx scripts/init-tables.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.633.0",
