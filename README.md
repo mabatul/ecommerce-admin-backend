@@ -219,12 +219,19 @@ jobs:
 Free and unlimited for this public repo, doesn't depend on the other repos
 deploying at the same time.
 
-On every Railway deploy, [`railway.json`](railway.json) runs
-`npm run init-tables` as the **pre-deploy command**. It runs inside Railway's
-private network and creates any missing table in DynamoDB Local, so the
-database never needs a public address just to be initialised (and a
-restarted, empty DynamoDB Local is repopulated with its tables on the next
-deploy). Against real AWS it does nothing; CloudFormation owns those tables.
+The Railway service's **Pre-deploy command** (Settings → Deploy) is
+`npm run init-tables`. It runs inside Railway's private network and creates
+any missing table in DynamoDB Local, so the database never needs a public
+address just to be initialised (and a restarted, empty DynamoDB Local is
+repopulated with its tables on the next deploy). Against real AWS it does
+nothing; CloudFormation owns those tables. [`railway.json`](railway.json)
+declares the same command, but Railway did not apply it to this already-existing
+service, so it was set on the service itself — check the setting if a fresh
+service comes up with missing tables.
+
+There is deliberately no Railway health check on this service: the app listens
+on `BACKEND_PORT` (4000), while Railway health-checks the `PORT` it injects, so
+a check would fail every deploy.
 
 For the deploy job to work, you need:
 
