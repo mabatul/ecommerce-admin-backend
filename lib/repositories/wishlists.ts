@@ -1,19 +1,15 @@
-import { GetCommand, PutCommand, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
-import { ddb } from "../aws/dynamodb";
+import { GetCommand, PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { ddb, scanAll } from "../aws/dynamodb";
 import { tableName } from "../aws/config";
+import type { Wishlist } from "../types";
 
-export interface Wishlist {
-  userId: string;
-  productIds: string[];
-  updatedAt: string;
-}
+export type { Wishlist } from "../types";
 
 const TABLE = tableName("Wishlists");
 
 export const wishlistsRepository = {
-  async list(): Promise<Wishlist[]> {
-    const result = await ddb.send(new ScanCommand({ TableName: TABLE }));
-    return (result.Items ?? []) as Wishlist[];
+  list(): Promise<Wishlist[]> {
+    return scanAll<Wishlist>({ TableName: TABLE });
   },
 
   async get(userId: string): Promise<Wishlist | undefined> {
@@ -21,9 +17,24 @@ export const wishlistsRepository = {
     return result.Item as Wishlist | undefined;
   },
 
+  // Unconditional write (seed data).
   async put(wishlist: Wishlist): Promise<Wishlist> {
     await ddb.send(new PutCommand({ TableName: TABLE, Item: wishlist }));
     return wishlist;
+  },
+
+  // Same optimistic contract as cartsRepository.save.
+  async save(wishlist: Wishlist, expectedVersion: number | null): Promise<void> {
+    const condition =
+      expectedVersion === null
+        ? { ConditionExpression: "attribute_not_exists(userId)" }
+        : {
+            ConditionExpression: "attribute_exists(userId) AND (attribute_not_exists(#version) OR #version = :expected)",
+            ExpressionAttributeNames: { "#version": "version" },
+            ExpressionAttributeValues: { ":expected": expectedVersion },
+          };
+
+    await ddb.send(new PutCommand({ TableName: TABLE, Item: wishlist, ...condition }));
   },
 
   async remove(userId: string): Promise<void> {

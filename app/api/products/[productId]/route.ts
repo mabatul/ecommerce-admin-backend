@@ -1,46 +1,28 @@
-import { NextRequest } from "next/server";
-import { json, withErrorHandling } from "@/lib/http/cors";
-import { productsRepository } from "@/lib/repositories/products";
+import { json } from "@/lib/http/cors";
+import { withAdmin } from "@/lib/http/auth";
+import { readJson } from "@/lib/http/request";
+import { parse, productSchema } from "@/lib/validators";
+import { productService } from "@/lib/services";
 
 interface Params {
   params: Promise<{ productId: string }>;
 }
 
-export const GET = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const GET = withAdmin(async (_request: Request, { params }: Params) => {
   const { productId } = await params;
-  const product = await productsRepository.get(productId);
-  if (!product) return json({ error: "not found" }, 404);
-  return json(product);
+  return json(await productService.get(productId));
 });
 
 // Also covers "update stock" — same PUT, just a changed stock value.
-export const PUT = withErrorHandling(async (request: NextRequest, { params }: Params) => {
+export const PUT = withAdmin(async (request: Request, { params }: Params) => {
   const { productId } = await params;
-  const body = await request.json();
-
-  if (!body.name || typeof body.price !== "number" || !body.categoryId) {
-    return json({ error: "name, price and categoryId are required" }, 400);
-  }
-
-  const existing = await productsRepository.get(productId);
-  if (!existing) return json({ error: "not found" }, 404);
-
-  const product = await productsRepository.put({
-    productId,
-    name: body.name,
-    description: body.description,
-    price: body.price,
-    categoryId: body.categoryId,
-    stock: typeof body.stock === "number" ? body.stock : existing.stock,
-    createdAt: existing.createdAt,
-  });
-
-  return json(product);
+  const input = parse(productSchema, await readJson(request));
+  return json(await productService.update(productId, input));
 });
 
-export const DELETE = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const DELETE = withAdmin(async (_request: Request, { params }: Params) => {
   const { productId } = await params;
-  await productsRepository.remove(productId);
+  await productService.remove(productId);
   return json(null, 204);
 });
 

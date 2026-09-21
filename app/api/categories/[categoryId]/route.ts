@@ -1,41 +1,27 @@
-import { NextRequest } from "next/server";
-import { json, withErrorHandling } from "@/lib/http/cors";
-import { categoriesRepository } from "@/lib/repositories/categories";
+import { json } from "@/lib/http/cors";
+import { withAdmin } from "@/lib/http/auth";
+import { readJson } from "@/lib/http/request";
+import { parse, categorySchema } from "@/lib/validators";
+import { categoryService } from "@/lib/services";
 
 interface Params {
   params: Promise<{ categoryId: string }>;
 }
 
-export const GET = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const GET = withAdmin(async (_request: Request, { params }: Params) => {
   const { categoryId } = await params;
-  const category = await categoriesRepository.get(categoryId);
-  if (!category) return json({ error: "not found" }, 404);
-  return json(category);
+  return json(await categoryService.get(categoryId));
 });
 
-export const PUT = withErrorHandling(async (request: NextRequest, { params }: Params) => {
+export const PUT = withAdmin(async (request: Request, { params }: Params) => {
   const { categoryId } = await params;
-  const body = await request.json();
-
-  if (!body.name) {
-    return json({ error: "name is required" }, 400);
-  }
-
-  const existing = await categoriesRepository.get(categoryId);
-  if (!existing) return json({ error: "not found" }, 404);
-
-  const category = await categoriesRepository.put({
-    categoryId,
-    name: body.name,
-    description: body.description,
-  });
-
-  return json(category);
+  const input = parse(categorySchema, await readJson(request));
+  return json(await categoryService.update(categoryId, input));
 });
 
-export const DELETE = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const DELETE = withAdmin(async (_request: Request, { params }: Params) => {
   const { categoryId } = await params;
-  await categoriesRepository.remove(categoryId);
+  await categoryService.remove(categoryId);
   return json(null, 204);
 });
 

@@ -1,31 +1,28 @@
-import { NextRequest } from "next/server";
-import { json, withErrorHandling } from "@/lib/http/cors";
+import { json } from "@/lib/http/cors";
+import { withAdmin } from "@/lib/http/auth";
+import { readJson } from "@/lib/http/request";
+import { parse, adminCartSchema } from "@/lib/validators";
 import { cartsRepository } from "@/lib/repositories/carts";
+import { cartService } from "@/lib/services";
 
 interface Params {
   params: Promise<{ userId: string }>;
 }
 
-export const GET = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const GET = withAdmin(async (_request: Request, { params }: Params) => {
   const { userId } = await params;
   const cart = await cartsRepository.get(userId);
   return json(cart ?? { userId, items: [], updatedAt: null });
 });
 
-export const PUT = withErrorHandling(async (request: NextRequest, { params }: Params) => {
+// Replaces the whole item list (that is how the admin removes a single item).
+export const PUT = withAdmin(async (request: Request, { params }: Params) => {
   const { userId } = await params;
-  const body = await request.json();
-
-  const cart = await cartsRepository.put({
-    userId,
-    items: Array.isArray(body.items) ? body.items : [],
-    updatedAt: new Date().toISOString(),
-  });
-
-  return json(cart);
+  const { items } = parse(adminCartSchema, await readJson(request));
+  return json(await cartService.replaceItems(userId, items));
 });
 
-export const DELETE = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const DELETE = withAdmin(async (_request: Request, { params }: Params) => {
   const { userId } = await params;
   await cartsRepository.remove(userId);
   return json(null, 204);

@@ -1,19 +1,15 @@
-import { GetCommand, PutCommand, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
-import { ddb } from "../aws/dynamodb";
+import { GetCommand, PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { ddb, scanAll } from "../aws/dynamodb";
 import { tableName } from "../aws/config";
+import type { Category } from "../types";
 
-export interface Category {
-  categoryId: string;
-  name: string;
-  description?: string;
-}
+export type { Category } from "../types";
 
 const TABLE = tableName("Categories");
 
 export const categoriesRepository = {
-  async list(): Promise<Category[]> {
-    const result = await ddb.send(new ScanCommand({ TableName: TABLE }));
-    return (result.Items ?? []) as Category[];
+  list(): Promise<Category[]> {
+    return scanAll<Category>({ TableName: TABLE });
   },
 
   async get(categoryId: string): Promise<Category | undefined> {

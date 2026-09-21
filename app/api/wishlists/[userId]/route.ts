@@ -1,31 +1,27 @@
-import { NextRequest } from "next/server";
-import { json, withErrorHandling } from "@/lib/http/cors";
+import { json } from "@/lib/http/cors";
+import { withAdmin } from "@/lib/http/auth";
+import { readJson } from "@/lib/http/request";
+import { parse, adminWishlistSchema } from "@/lib/validators";
 import { wishlistsRepository } from "@/lib/repositories/wishlists";
+import { wishlistService } from "@/lib/services";
 
 interface Params {
   params: Promise<{ userId: string }>;
 }
 
-export const GET = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const GET = withAdmin(async (_request: Request, { params }: Params) => {
   const { userId } = await params;
   const wishlist = await wishlistsRepository.get(userId);
   return json(wishlist ?? { userId, productIds: [], updatedAt: null });
 });
 
-export const PUT = withErrorHandling(async (request: NextRequest, { params }: Params) => {
+export const PUT = withAdmin(async (request: Request, { params }: Params) => {
   const { userId } = await params;
-  const body = await request.json();
-
-  const wishlist = await wishlistsRepository.put({
-    userId,
-    productIds: Array.isArray(body.productIds) ? body.productIds : [],
-    updatedAt: new Date().toISOString(),
-  });
-
-  return json(wishlist);
+  const { productIds } = parse(adminWishlistSchema, await readJson(request));
+  return json(await wishlistService.replaceProductIds(userId, productIds));
 });
 
-export const DELETE = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const DELETE = withAdmin(async (_request: Request, { params }: Params) => {
   const { userId } = await params;
   await wishlistsRepository.remove(userId);
   return json(null, 204);

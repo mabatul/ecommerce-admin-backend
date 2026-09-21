@@ -1,29 +1,14 @@
-import { NextRequest } from "next/server";
-import { randomUUID } from "crypto";
-import { json, withErrorHandling } from "@/lib/http/cors";
-import { usersRepository } from "@/lib/repositories/users";
+import { json } from "@/lib/http/cors";
+import { withAdmin } from "@/lib/http/auth";
+import { readJson } from "@/lib/http/request";
+import { parse, userSchema } from "@/lib/validators";
+import { userService } from "@/lib/services";
 
-export const GET = withErrorHandling(async () => {
-  const users = await usersRepository.list();
-  return json(users);
-});
+export const GET = withAdmin(async (_request: Request) => json(await userService.list()));
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
-  const body = await request.json();
-
-  if (!body.name || !body.email) {
-    return json({ error: "name and email are required" }, 400);
-  }
-
-  const user = await usersRepository.put({
-    userId: body.userId || randomUUID(),
-    name: body.name,
-    email: body.email,
-    role: body.role === "admin" ? "admin" : "customer",
-    createdAt: new Date().toISOString(),
-  });
-
-  return json(user, 201);
+export const POST = withAdmin(async (request: Request) => {
+  const input = parse(userSchema, await readJson(request));
+  return json(await userService.create(input), 201);
 });
 
 export async function OPTIONS() {

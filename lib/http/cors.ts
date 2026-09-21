@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+import { AppError } from "../errors";
 
-// Frontend and backend are separate origins, even locally.
+// Frontend, storefront and backend are separate origins.
 export function withCors(response: NextResponse): NextResponse {
   response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+  response.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  response.headers.set("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Customer-Id");
   return response;
 }
 
@@ -21,8 +22,8 @@ export function json(data: unknown, init?: number | ResponseInit): NextResponse 
   return withCors(response);
 }
 
-// Ensures a thrown error still gets CORS headers instead of Next's bare
-// error response (which has none, and reads as a CORS failure).
+// Every handler goes through this so errors always carry CORS headers (a bare
+// Next error response has none and reads as a CORS failure in the browser).
 export function withErrorHandling<Args extends unknown[]>(
   handler: (...args: Args) => Promise<NextResponse>
 ): (...args: Args) => Promise<NextResponse> {
@@ -30,6 +31,9 @@ export function withErrorHandling<Args extends unknown[]>(
     try {
       return await handler(...args);
     } catch (error) {
+      if (error instanceof AppError) {
+        return json({ error: error.message, details: error.details }, error.status);
+      }
       console.error("[api] unhandled error:", error);
       return json({ error: "Internal server error" }, 500);
     }

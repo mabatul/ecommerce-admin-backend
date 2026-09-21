@@ -1,21 +1,15 @@
-import { GetCommand, PutCommand, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
-import { ddb } from "../aws/dynamodb";
+import { GetCommand, PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { ddb, scanAll } from "../aws/dynamodb";
 import { tableName } from "../aws/config";
+import type { User } from "../types";
 
-export interface User {
-  userId: string;
-  name: string;
-  email: string;
-  role: "admin" | "customer";
-  createdAt: string;
-}
+export type { User } from "../types";
 
 const TABLE = tableName("Users");
 
 export const usersRepository = {
-  async list(): Promise<User[]> {
-    const result = await ddb.send(new ScanCommand({ TableName: TABLE }));
-    return (result.Items ?? []) as User[];
+  list(): Promise<User[]> {
+    return scanAll<User>({ TableName: TABLE });
   },
 
   async get(userId: string): Promise<User | undefined> {

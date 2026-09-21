@@ -1,27 +1,14 @@
-import { NextRequest } from "next/server";
-import { randomUUID } from "crypto";
-import { json, withErrorHandling } from "@/lib/http/cors";
-import { categoriesRepository } from "@/lib/repositories/categories";
+import { json } from "@/lib/http/cors";
+import { withAdmin } from "@/lib/http/auth";
+import { readJson } from "@/lib/http/request";
+import { parse, categorySchema } from "@/lib/validators";
+import { categoryService } from "@/lib/services";
 
-export const GET = withErrorHandling(async () => {
-  const categories = await categoriesRepository.list();
-  return json(categories);
-});
+export const GET = withAdmin(async (_request: Request) => json(await categoryService.list()));
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
-  const body = await request.json();
-
-  if (!body.name) {
-    return json({ error: "name is required" }, 400);
-  }
-
-  const category = await categoriesRepository.put({
-    categoryId: body.categoryId || randomUUID(),
-    name: body.name,
-    description: body.description,
-  });
-
-  return json(category, 201);
+export const POST = withAdmin(async (request: Request) => {
+  const input = parse(categorySchema, await readJson(request));
+  return json(await categoryService.create(input), 201);
 });
 
 export async function OPTIONS() {

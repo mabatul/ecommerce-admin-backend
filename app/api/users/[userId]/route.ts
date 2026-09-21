@@ -1,43 +1,27 @@
-import { NextRequest } from "next/server";
-import { json, withErrorHandling } from "@/lib/http/cors";
-import { usersRepository } from "@/lib/repositories/users";
+import { json } from "@/lib/http/cors";
+import { withAdmin } from "@/lib/http/auth";
+import { readJson } from "@/lib/http/request";
+import { parse, userSchema } from "@/lib/validators";
+import { userService } from "@/lib/services";
 
 interface Params {
   params: Promise<{ userId: string }>;
 }
 
-export const GET = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const GET = withAdmin(async (_request: Request, { params }: Params) => {
   const { userId } = await params;
-  const user = await usersRepository.get(userId);
-  if (!user) return json({ error: "not found" }, 404);
-  return json(user);
+  return json(await userService.get(userId));
 });
 
-export const PUT = withErrorHandling(async (request: NextRequest, { params }: Params) => {
+export const PUT = withAdmin(async (request: Request, { params }: Params) => {
   const { userId } = await params;
-  const body = await request.json();
-
-  if (!body.name || !body.email) {
-    return json({ error: "name and email are required" }, 400);
-  }
-
-  const existing = await usersRepository.get(userId);
-  if (!existing) return json({ error: "not found" }, 404);
-
-  const user = await usersRepository.put({
-    userId,
-    name: body.name,
-    email: body.email,
-    role: body.role === "admin" ? "admin" : "customer",
-    createdAt: existing.createdAt,
-  });
-
-  return json(user);
+  const input = parse(userSchema, await readJson(request));
+  return json(await userService.update(userId, input));
 });
 
-export const DELETE = withErrorHandling(async (_request: Request, { params }: Params) => {
+export const DELETE = withAdmin(async (_request: Request, { params }: Params) => {
   const { userId } = await params;
-  await usersRepository.remove(userId);
+  await userService.remove(userId);
   return json(null, 204);
 });
 
