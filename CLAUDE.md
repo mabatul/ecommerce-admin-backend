@@ -13,9 +13,11 @@ up the ecommerce-admin project:
   `../ecommerce-admin-infra`.
 - **ecommerce-admin-backend** (this repo) — the Next.js API. Has its own
   `docker-compose.yml` and starts independently.
-- **ecommerce-admin-frontend** — the Next.js dashboard, consumes this
-  backend's API over HTTP. Also starts independently, with its own
+- **ecommerce-admin-frontend** — the Next.js admin dashboard, consumes this
+  backend's admin API over HTTP. Also starts independently, with its own
   `docker-compose.yml`.
+- **ecommerce-storefront** — the customer-facing Next.js shop, consumes this
+  backend's public `/api/store/*` routes. Also starts independently.
 
 This repo needs infra's LocalStack (or DynamoDB Local on Railway, or real
 AWS) reachable via `AWS_ENDPOINT_URL` — but it does **not** depend on
@@ -46,6 +48,25 @@ Bring infra up first (separately), then this repo, then frontend — see
   baked in via `COPY` (used by CI and by Railway, see `railway.json`) —
   it also bakes in `lib/`, `scripts/`, and `tsconfig.json` so `npm run seed`
   works at runtime via `tsx`, not just the compiled `.next` output.
+- **Layering: route → validator → service → repository.** Route handlers
+  only parse/validate input and call a service; business rules (stock,
+  merging cart lines, category-in-use, ...) live in `lib/services/` and
+  receive their repositories as arguments so they're unit-testable with
+  in-memory fakes. Repositories are plain DynamoDB calls with no rules.
+  Don't put rules in routes or repositories.
+- **Two API surfaces.** `/api/store/*` is public (catalog, cart, wishlist);
+  everything else is admin and wrapped in `withAdmin` (`ADMIN_API_KEY`,
+  fails closed outside `local`). New admin routes must use `withAdmin`.
+- **Never trust the client for price, stock or ids.** Prices/stock come from
+  the database; validators (Zod) strip unknown fields. Customers are an
+  anonymous `guest-<uuid>` header — scoping, not authentication — and the
+  docs say so; don't present it as security.
+- **Errors are typed** (`lib/errors.ts`) and mapped to statuses in
+  `withErrorHandling`; unexpected errors return a generic 500 and log the
+  detail. Every response, including errors, must carry CORS headers.
+- **One DynamoDB table per entity** is deliberate (CloudFormation, IAM and
+  the Railway init script all assume it). Additive attributes are fine;
+  don't move to a single-table design without a strong reason.
 - **This repo deploys independently.** Its `.github/workflows/ci.yml`
   builds, lints, and deploys to Railway on its own — it doesn't wait for or
   depend on infra/frontend's pipelines.
@@ -54,8 +75,8 @@ Bring infra up first (separately), then this repo, then frontend — see
 
 - Documentation (README, code comments): **English**, even though
   conversations about this project may happen in Spanish.
-- Commit messages: plain-language summaries of what changed (not
-  Conventional Commits prefixes like `feat:`/`chore:`).
+- Commit messages: Conventional Commits (`feat:`, `fix:`, `refactor:`,
+  `test:`, `docs:`, `chore:`), in English, saying what changed and why.
 - Don't fabricate commit timestamps/history to make automated work look
   like it happened incrementally over time it didn't.
 
